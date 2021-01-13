@@ -2,7 +2,8 @@
 // 💯 (alternate) migrate from classes
 // http://localhost:3000/isolated/exercise/04-classes.js
 
-import * as React from 'react'
+import {Component} from 'react'
+import type {VFC} from 'react'
 
 // If you'd rather practice refactoring a class component to a function
 // component with hooks, then go ahead and do this exercise.
@@ -10,44 +11,64 @@ import * as React from 'react'
 // 🦉 You've learned all the hooks you need to know to refactor this Board
 // component to hooks. So, let's make it happen!
 
-class Board extends React.Component {
-  state = {
+type SquareIdx = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8
+type X = 'X'
+type O = 'O'
+type Square = X | O | null
+type Squares = [
+  Square,
+  Square,
+  Square,
+  Square,
+  Square,
+  Square,
+  Square,
+  Square,
+  Square,
+]
+
+interface BoardState {
+  squares: Squares
+}
+class Board extends Component<unknown, BoardState> {
+  state: BoardState = {
     squares:
-      JSON.parse(window.localStorage.getItem('squares')) || Array(9).fill(null),
+      JSON.parse(window.localStorage.getItem('squares')!) ||
+      Array(9).fill(null),
   }
 
-  selectSquare(square) {
+  selectSquare(square: SquareIdx): void {
     const {squares} = this.state
     const nextValue = calculateNextValue(squares)
     if (calculateWinner(squares) || squares[square]) {
       return
     }
-    const squaresCopy = [...squares]
+    const squaresCopy = [...squares] as Squares
     squaresCopy[square] = nextValue
     this.setState({squares: squaresCopy})
   }
-  renderSquare = i => (
+  renderSquare = (i: SquareIdx): JSX.Element => (
     <button className="square" onClick={() => this.selectSquare(i)}>
       {this.state.squares[i]}
     </button>
   )
 
-  restart = () => {
-    this.setState({squares: Array(9).fill(null)})
+  restart = (): void => {
+    this.setState({squares: Array(9).fill(null) as Squares})
     this.updateLocalStorage()
   }
 
-  componentDidMount() {
+  componentDidMount(): void {
     this.updateLocalStorage()
   }
 
-  componentDidUpdate(prevProps, prevState) {
+  componentDidUpdate(_: unknown, prevState: BoardState): void {
     if (prevState.squares !== this.state.squares) {
       this.updateLocalStorage()
     }
   }
 
-  updateLocalStorage() {
+  updateLocalStorage(): void {
     window.localStorage.setItem('squares', JSON.stringify(this.state.squares))
   }
 
@@ -83,17 +104,19 @@ class Board extends React.Component {
   }
 }
 
-function Game() {
-  return (
-    <div className="game">
-      <div className="game-board">
-        <Board />
-      </div>
+const Game: VFC = () => (
+  <div className="game">
+    <div className="game-board">
+      <Board />
     </div>
-  )
-}
+  </div>
+)
 
-function calculateStatus(winner, squares, nextValue) {
+function calculateStatus(
+  winner: X | O | null,
+  squares: Squares,
+  nextValue: X | O,
+) {
   return winner
     ? `Winner: ${winner}`
     : squares.every(Boolean)
@@ -101,13 +124,13 @@ function calculateStatus(winner, squares, nextValue) {
     : `Next player: ${nextValue}`
 }
 
-function calculateNextValue(squares) {
+function calculateNextValue(squares: Squares): X | O {
   const xSquaresCount = squares.filter(r => r === 'X').length
   const oSquaresCount = squares.filter(r => r === 'O').length
   return oSquaresCount === xSquaresCount ? 'X' : 'O'
 }
 
-function calculateWinner(squares) {
+function calculateWinner(squares: Squares): X | O | null {
   const lines = [
     [0, 1, 2],
     [3, 4, 5],
@@ -127,8 +150,6 @@ function calculateWinner(squares) {
   return null
 }
 
-function App() {
-  return <Game />
-}
+const App: VFC = () => <Game />
 
 export default App
